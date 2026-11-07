@@ -27,6 +27,13 @@ const en = {
   'settings.language': 'Language',
   'settings.close': 'CLOSE',
 
+  'settings.install': 'Install app',
+  'settings.install.action': 'INSTALL',
+  'settings.install.ios': 'In Safari, tap Share → Add to Home Screen',
+  'settings.install.android': 'Open the browser menu → Install app',
+  'settings.install.desktop': 'Choose Install app from your browser menu',
+  'settings.install.installed': 'Running as the installed app ✓',
+
   'pause.title': 'PAUSED',
   'pause.resume': 'RESUME',
   'pause.settings': 'SETTINGS',
@@ -97,8 +104,6 @@ const en = {
   'tut.next': 'NEXT',
   'tut.leave': 'LEAVE',
   'tut.finish': 'DONE',
-
-  'rotate.rotate': 'Rotate your device to landscape',
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -120,6 +125,13 @@ const th: Record<StringKey, string> = {
   'settings.motion.reduced': 'ลดลง',
   'settings.language': 'ภาษา',
   'settings.close': 'ปิด',
+
+  'settings.install': 'ติดตั้งแอป',
+  'settings.install.action': 'ติดตั้ง',
+  'settings.install.ios': 'ใน Safari กดปุ่มแชร์ → เพิ่มไปยังหน้าจอโฮม',
+  'settings.install.android': 'เปิดเมนูเบราว์เซอร์ → ติดตั้งแอป',
+  'settings.install.desktop': 'เลือก "ติดตั้งแอป" จากเมนูเบราว์เซอร์',
+  'settings.install.installed': 'กำลังใช้งานแอปที่ติดตั้งแล้ว ✓',
 
   'pause.title': 'หยุดชั่วคราว',
   'pause.resume': 'เล่นต่อ',
@@ -189,8 +201,6 @@ const th: Record<StringKey, string> = {
   'tut.next': 'ถัดไป',
   'tut.leave': 'ออกจากบทเรียน',
   'tut.finish': 'เสร็จสิ้น',
-
-  'rotate.rotate': 'หมุนอุปกรณ์เป็นแนวนอน',
 };
 
 const dicts: Record<Lang, Record<StringKey, string>> = { en, th };

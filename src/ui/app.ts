@@ -15,6 +15,18 @@ import { openPause } from './pause';
 import { mountGameHud } from './hud';
 import { showScorePeek } from './overlays';
 import { startGame, type GameHandle } from './shell';
+import { initInstallCapture } from './install';
+
+// PWA: capture the deferred install prompt early (Settings shows guidance),
+// and register the offline service worker in production builds only.
+// updateViaCache: 'none' — always fetch the worker script from the network
+// so a stale HTTP-cached copy can never hijack a deploy.
+initInstallCapture();
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    void navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(() => undefined);
+  });
+}
 
 export function startApp(app: Application): void {
   // Audio needs a user gesture (autoplay policy): start on first interaction.
