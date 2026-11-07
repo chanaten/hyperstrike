@@ -51,7 +51,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   language: 'en',
-  music: 0.5,
+  music: 0.3,
   sfx: 0.7,
   speed: 1,
   motion: 'full',
