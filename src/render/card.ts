@@ -11,13 +11,16 @@ import { COLORS, type CardMetrics } from './theme';
  *  with a bold fallback. */
 export const CARD_FONT = "'Matcha Style', 'Arial Black', Arial, sans-serif";
 
-/** Danger tint by damage count (shape+color, never color alone).
- *  Chip variants are darkened for legibility on the white card face. */
+/** Damage tint shared by the card number and its chip/reticle so both
+ *  read as one glyph. Tones stay light enough to feel airy but keep ≥3:1
+ *  contrast on the near-white card face (WCAG large-text minimum).
+ *  1 (crosshair) keeps the original neutral outline + navy number. */
 function dangerColor(dmg: number): number {
-  if (dmg >= 7) return 0xd01030;
-  if (dmg === 5) return 0xc97f00;
-  if (dmg === 3) return 0x8f8ab8;
-  return 0x6b66a0;
+  if (dmg >= 7) return 0xd01030; // red — 5.0:1
+  if (dmg === 5) return 0xb07c00; // yellow/gold — 3.3:1
+  if (dmg === 3) return 0x2e9e5b; // light green — 3.1:1
+  if (dmg === 2) return 0x2e86c1; // light blue — 3.6:1
+  return 0x6b66a0; // 1: unchanged neutral
 }
 
 /**
@@ -121,7 +124,7 @@ function buildFace(value: number, m: CardMetrics): Container {
       fontFamily: CARD_FONT,
       fontSize: baseSize,
       fontWeight: '900',
-      fill: isSeven ? 0xb01030 : 0x1a1740,
+      fill: bh >= 2 ? danger : 0x1a1740,
     },
   });
   if (num.width > maxContentW) {
@@ -148,10 +151,11 @@ function buildFace(value: number, m: CardMetrics): Container {
   dmgText.x = 0;
   chip.addChild(dmgText);
   const reticleSize = Math.max(11, m.h * 0.1625); // +25%
+  const chipGap = Math.max(4, m.h * 0.07); // space between digit and crosshair
   const ret = new Graphics();
   drawReticle(
     ret,
-    dmgText.width + reticleSize * 0.62,
+    dmgText.width + chipGap + reticleSize * 0.36,
     0,
     reticleSize,
     danger,
