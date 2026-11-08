@@ -1,11 +1,11 @@
 /* HYPERSTRIKE! — arcade neon shell */
 
-/* Card numerals: Orbitron (SIL OFL 1.1 — see src/assets/fonts/OFL.txt).
-   One variable file covers 400–900; the app waits for it before Pixi
-   bakes any card text (see boot() in src/main.ts). */
+/* Card numerals: "Matcha Style" by Khurasan — 100% free for personal and
+   commercial use (see src/assets/fonts/matcha-style-license.txt). The app
+   waits for it before Pixi bakes any card text (boot() in src/main.ts). */
 @font-face {
-  font-family: 'Orbitron';
-  src: url('./assets/fonts/orbitron-latin.woff2') format('woff2');
+  font-family: 'Matcha Style';
+  src: url('./assets/fonts/matcha-style.otf') format('opentype');
   font-weight: 400 900;
   font-style: normal;
   font-display: swap;

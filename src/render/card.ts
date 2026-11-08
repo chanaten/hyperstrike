@@ -7,8 +7,9 @@ import { Container, Graphics, Text } from 'pixi.js';
 import { damage } from '../engine/cards';
 import { COLORS, type CardMetrics } from './theme';
 
-/** Card numeral face (bundled Orbitron — SIL OFL) with a bold fallback. */
-export const CARD_FONT = "'Orbitron', 'Arial Black', Arial, sans-serif";
+/** Card numeral face ("Matcha Style" by Khurasan, free for commercial use)
+ *  with a bold fallback. */
+export const CARD_FONT = "'Matcha Style', 'Arial Black', Arial, sans-serif";
 
 /** Danger tint by damage count (shape+color, never color alone).
  *  Chip variants are darkened for legibility on the white card face. */
@@ -111,8 +112,8 @@ function buildFace(value: number, m: CardMetrics): Container {
 
   const label = String(value);
   // Height-driven size, then shrink to fit the card width. Measured after
-  // creation so it adapts to any numeral face (Orbitron digits are wider
-  // than Arial Black at the same size).
+  // creation so it adapts to any numeral face (display fonts often draw
+  // wider digits than Arial Black at the same size).
   const baseSize = Math.floor(m.h * 0.4);
   const num = new Text({
     text: label,

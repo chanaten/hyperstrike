@@ -175,8 +175,8 @@ async function boot(): Promise<void> {
   try {
     await Promise.race([
       Promise.all([
-        document.fonts.load('700 16px Orbitron'),
-        document.fonts.load('900 40px Orbitron'),
+        document.fonts.load('700 16px "Matcha Style"'),
+        document.fonts.load('900 40px "Matcha Style"'),
       ]),
       new Promise((resolve) => setTimeout(resolve, 1500)),
     ]);
