@@ -23,6 +23,16 @@ function dangerColor(dmg: number): number {
   return 0x6b66a0; // 1: unchanged neutral
 }
 
+/** Card edge tint: a lighter shade of the numeral's damage color, so every
+ *  card reads as one cohesive mark (5/7 keep their established edges). */
+function borderColor(dmg: number): number {
+  if (dmg >= 7) return 0xd01030; // red
+  if (dmg === 5) return 0xffd84d; // light yellow
+  if (dmg === 3) return 0x7fd3a2; // light green
+  if (dmg === 2) return 0x82c0e8; // light blue
+  return 0xb9b4e0; // 1: soft lavender
+}
+
 /**
  * Targeting reticle: circle + four cardinal ticks + center dot
  * (the card's damage-chip glyph).
@@ -77,8 +87,6 @@ function buildFace(value: number, m: CardMetrics): Container {
   const face = new Container();
   const bh = damage(value);
   const danger = dangerColor(bh);
-  const isSeven = bh >= 7;
-  const isFive = bh === 5;
   const foil = value >= 70;
 
   const pad = m.w * 0.06;
@@ -87,11 +95,11 @@ function buildFace(value: number, m: CardMetrics): Container {
   const bg = new Graphics();
   roundedRect(bg, m.w, m.h, m.radius);
   bg.fill(foil ? COLORS.cardFaceHi : COLORS.cardFace);
-  // danger border: 1/2/3 neutral, 5 gold, 7 red
+  // edge tinted to the damage color (lighter than the numeral)
   bg.stroke({
     width: Math.max(1.5, m.h * 0.03),
-    color: isSeven ? COLORS.danger : isFive ? COLORS.yellow : 0xb9b4e0,
-    alpha: isSeven || isFive ? 0.95 : 0.6,
+    color: borderColor(bh),
+    alpha: 0.9,
   });
   face.addChild(bg);
 
