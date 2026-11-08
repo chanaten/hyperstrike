@@ -19,6 +19,8 @@ class AudioEngine {
   private sfxGain: GainNode | null = null;
   private noiseBuf: AudioBuffer | null = null;
   private music: HTMLAudioElement | null = null;
+  private musicSource: MediaElementAudioSourceNode | null = null;
+  private musicGain: GainNode | null = null;
   private musicRunning = false;
 
   /** Create/resume the audio contexts. Safe to call often. */
@@ -48,8 +50,12 @@ class AudioEngine {
 
       // singleton lives for the app's lifetime — listener stays registered
       onSettingsChange((s) => {
+        if (this.musicGain) {
+          this.musicGain.gain.setTargetAtTime(s.music * MUSIC_LEVEL, ctx.currentTime, 0.05);
+        } else if (this.music) {
+          this.music.volume = s.music * MUSIC_LEVEL; // fallback (no Web Audio graph)
+        }
         this.sfxGain?.gain.setTargetAtTime(s.sfx, ctx.currentTime, 0.05);
-        if (this.music) this.music.volume = s.music * MUSIC_LEVEL;
       });
 
       document.addEventListener('visibilitychange', () => {
@@ -71,13 +77,37 @@ class AudioEngine {
       this.music = new Audio(loopUrl);
       this.music.loop = true;
       this.music.preload = 'auto';
-      this.music.volume = getSettings().music * MUSIC_LEVEL;
+      // iOS ignores HTMLMediaElement.volume, so element volume stays at 1
+      // and the real level control is the musicGain node below.
+      this.music.volume = 1;
+      this.connectMusicGraph(ctx);
     }
     this.musicRunning = true;
     void this.music.play().catch(() => {
       // autoplay refused — will retry on the next user gesture
       this.musicRunning = false;
     });
+  }
+
+  /**
+   * Route the music element through a GainNode. iOS Safari treats
+   * element.volume as read-only (always 100%), so without this the slider
+   * can neither lower the music nor change it. Falls back to element
+   * volume where Web Audio routing is unavailable.
+   */
+  private connectMusicGraph(ctx: AudioContext): void {
+    if (!this.music || this.musicSource) return;
+    try {
+      this.musicSource = ctx.createMediaElementSource(this.music);
+      this.musicGain = ctx.createGain();
+      this.musicGain.gain.value = getSettings().music * MUSIC_LEVEL;
+      this.musicSource.connect(this.musicGain);
+      this.musicGain.connect(ctx.destination);
+    } catch {
+      this.musicSource = null;
+      this.musicGain = null;
+      this.music.volume = getSettings().music * MUSIC_LEVEL;
+    }
   }
 
   // ------------------------------------------------------------ SFX utils
@@ -196,12 +226,14 @@ class AudioEngine {
     musicRunning: boolean;
     musicPlaying: boolean;
     ctxState: string | null;
+    musicGain: number | null;
   } {
     return {
       hasContext: this.ctx !== null,
       musicRunning: this.musicRunning,
       musicPlaying: !!this.music && !this.music.paused,
       ctxState: this.ctx?.state ?? null,
+      musicGain: this.musicGain ? Number(this.musicGain.gain.value.toFixed(4)) : null,
     };
   }
 }
