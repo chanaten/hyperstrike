@@ -61,6 +61,7 @@ export function flyArc(
 export function flipCard(
   view: { container: Container; showFace: () => void; showBack: () => void },
   toFace: boolean,
+  base = 1,
 ): gsap.core.Timeline {
   const c = view.container;
   const tl = gsap.timeline();
@@ -70,7 +71,8 @@ export function flipCard(
     ease: 'power2.in',
     onComplete: () => (toFace ? view.showFace() : view.showBack()),
   }).to(c.scale, {
-    x: 1,
+    x: base,
+    y: base,
     duration: dur(0.18),
     ease: 'back.out(2.2)',
   });
@@ -78,12 +80,12 @@ export function flipCard(
 }
 
 /** Small settle with overshoot after a card lands. */
-export function settle(target: Container): gsap.core.Timeline {
+export function settle(target: Container, base = 1): gsap.core.Timeline {
   const tl = gsap.timeline();
   tl.fromTo(
     target.scale,
-    { x: target.scale.x * 1.12, y: target.scale.y * 1.12 },
-    { x: 1, y: 1, duration: dur(0.22), ease: 'elastic.out(1, 0.55)' },
+    { x: base * 1.12, y: base * 1.12 },
+    { x: base, y: base, duration: dur(0.22), ease: 'elastic.out(1, 0.55)' },
   );
   return tl;
 }

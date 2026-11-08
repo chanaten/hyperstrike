@@ -98,7 +98,6 @@ const en = {
   'tut.leave': 'LEAVE',
   'tut.finish': 'DONE',
 
-  'rotate.rotate': 'Rotate your device to landscape',
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -190,7 +189,6 @@ const th: Record<StringKey, string> = {
   'tut.leave': 'ออกจากบทเรียน',
   'tut.finish': 'เสร็จสิ้น',
 
-  'rotate.rotate': 'หมุนอุปกรณ์เป็นแนวนอน',
 };
 
 const dicts: Record<Lang, Record<StringKey, string>> = { en, th };

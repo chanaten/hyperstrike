@@ -55,44 +55,6 @@ body {
   pointer-events: auto;
 }
 
-/* Portrait phones: ask for landscape (locked decision Q13). */
-#rotate-hint {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  background: #0b0a1e;
-  color: var(--ink);
-  font-size: 20px;
-  text-align: center;
-  padding: 24px;
-}
-
-#rotate-hint .rotate-icon {
-  font-size: 56px;
-  animation: rotate-nudge 1.6s ease-in-out infinite;
-}
-
-@keyframes rotate-nudge {
-  0%,
-  100% {
-    transform: rotate(-12deg);
-  }
-  50% {
-    transform: rotate(78deg);
-  }
-}
-
-@media (orientation: portrait) and (pointer: coarse) {
-  #rotate-hint {
-    display: flex;
-  }
-}
-
 /* ---- shared UI pieces (used by screens) ---- */
 
 .screen {
@@ -170,8 +132,8 @@ body {
 
 .gear-btn {
   position: absolute;
-  top: 14px;
-  right: 16px;
+  top: calc(14px + env(safe-area-inset-top));
+  right: calc(16px + env(safe-area-inset-right));
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -373,7 +335,7 @@ body {
 
 .hud-btn {
   position: absolute;
-  top: 12px;
+  top: calc(12px + env(safe-area-inset-top));
   z-index: 20;
   pointer-events: auto;
   cursor: pointer;
@@ -386,7 +348,7 @@ body {
   border: 1px solid var(--panel-line);
   border-radius: 10px;
   min-width: 46px;
-  height: 40px;
+  height: 44px;
   padding: 0 12px;
   transition:
     box-shadow 0.12s ease,
@@ -399,7 +361,7 @@ body {
 }
 
 .speed-btn {
-  left: 12px;
+  left: calc(12px + env(safe-area-inset-left));
 }
 
 .speed-btn.on {
@@ -410,7 +372,7 @@ body {
 }
 
 .pause-btn {
-  right: 12px;
+  right: calc(12px + env(safe-area-inset-right));
 }
 
 /* ---- overlays (scoreboard / match end) ---- */
@@ -541,4 +503,108 @@ body {
   font-size: 12px;
   color: var(--ink-dim);
   letter-spacing: 0.1em;
+}
+
+/* ---- portrait phones: the whole app (canvas layout matches this query) ---- */
+
+@media (orientation: portrait) and (max-width: 560px) {
+  /* Auto-margin centering instead of justify-content: content taller than
+     the viewport scrolls from the top instead of clipping. */
+  .screen {
+    justify-content: flex-start;
+    gap: 14px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: calc(env(safe-area-inset-top) + 56px) 16px
+      calc(env(safe-area-inset-bottom) + 24px);
+  }
+
+  .screen::before,
+  .screen::after {
+    content: '';
+    flex: 0 0 auto;
+    margin: auto 0;
+  }
+
+  .overlay {
+    align-items: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: calc(env(safe-area-inset-top) + 56px) 14px
+      calc(env(safe-area-inset-bottom) + 20px);
+  }
+
+  .overlay > .panel {
+    margin: auto;
+    min-width: 0;
+    width: 100%;
+    max-width: 440px;
+    padding: 22px 16px;
+  }
+
+  .marquee {
+    padding: 22px 16px 18px;
+  }
+
+  .marquee .neon-title {
+    font-size: clamp(30px, 9.5vw, 60px);
+  }
+
+  .neon-sub {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+  }
+
+  .arcade-btn:not(.gear-btn) {
+    min-width: min(260px, 100%);
+    padding: 13px 22px;
+  }
+
+  .settings-panel {
+    min-width: 0;
+  }
+
+  .setting-row {
+    gap: 10px;
+    font-size: 14px;
+    flex-wrap: wrap;
+  }
+
+  .setting-row input[type='range'] {
+    width: min(160px, 42vw);
+  }
+
+  .seg-btn {
+    padding: 11px 16px;
+  }
+
+  .standing {
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .banner {
+    font-size: clamp(30px, 9vw, 48px);
+  }
+
+  .btn-row {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .btn-row .arcade-btn {
+    min-width: min(240px, 100%);
+  }
+
+  .rules-panel,
+  .tutorial-panel {
+    max-width: none;
+    width: 100%;
+    text-align: left;
+  }
+
+  .rule-line {
+    font-size: 14px;
+  }
 }
