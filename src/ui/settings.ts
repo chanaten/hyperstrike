@@ -3,7 +3,6 @@
 import { t } from '../i18n';
 import { getSettings, updateSettings } from '../state/settingsStore';
 import { el, onEscape, uiRoot } from './dom';
-import { canPromptInstall, installHintKey, isStandalone, promptInstall } from './install';
 
 export function openSettings(onClose: () => void): void {
   const root = uiRoot();
@@ -80,20 +79,6 @@ export function openSettings(onClose: () => void): void {
     }
     langRow.appendChild(langBtns);
     panel.appendChild(langRow);
-
-    // PWA install guidance (iOS has no automatic prompt — show steps).
-    const installRow = el('div', 'setting-row install-row');
-    installRow.appendChild(el('span', '', t('settings.install')));
-    if (isStandalone()) {
-      installRow.appendChild(el('span', 'install-hint', t('settings.install.installed')));
-    } else if (canPromptInstall()) {
-      const installBtn = el('button', 'seg-btn install-btn', t('settings.install.action'));
-      installBtn.addEventListener('click', () => promptInstall());
-      installRow.appendChild(installBtn);
-    } else {
-      installRow.appendChild(el('span', 'install-hint', t(installHintKey())));
-    }
-    panel.appendChild(installRow);
 
     const close = el('button', 'arcade-btn primary', t('settings.close'));
     close.addEventListener('click', done);

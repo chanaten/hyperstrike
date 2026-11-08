@@ -19,7 +19,6 @@ import { onLanguageChange, t } from '../i18n';
 import { createBackStack, createCard, type CardView } from './card';
 import { burst, dur, flyArc, flipCard, motionFull, settle, shake, wait } from './motion';
 import { COLORS, computeLayout, ROW_SLOTS, type Layout } from './theme';
-import { safeAreaInsets } from '../util/safeArea';
 
 const BOT_COLORS = [COLORS.cyan, 0xb64dff, 0xffb84d, 0xff4dd8, 0x4dff9e];
 /** Per-seat reveal rhythm — a light touch of bot personality (Q14). */
@@ -64,10 +63,7 @@ export class TableRenderer {
   private roundText!: Text;
   private roundBar!: Graphics;
   private rowPrompt!: Text;
-  private promptBg!: Graphics;
   private rowGlow!: Graphics;
-  private readonly badgeRoots: Container[] = [];
-  private readonly avatarLabels: Text[] = [];
 
   // interaction
   private staged: (Staged | null)[] = [null, null, null, null, null];
@@ -86,14 +82,11 @@ export class TableRenderer {
   paused = false;
   private pauseWaiters: (() => void)[] = [];
   private readonly onWindowResize = (): void => this.relayout();
-  /** Fires only after Pixi's own screen resize lands — window.resize can
-   *  arrive first with stale screen dimensions. */
-  private readonly onRendererResize = (): void => this.relayout();
 
   constructor(app: Application, cb: TableCallbacks) {
     this.app = app;
     this.cb = cb;
-    this.layout = computeLayout(app.screen.width, app.screen.height, safeAreaInsets());
+    this.layout = computeLayout(app.screen.width, app.screen.height);
 
     this.root.addChild(this.matLayer, this.tableLayer, this.glowLayer, this.cardLayer, this.hudLayer, this.fxLayer);
     this.root.label = 'root';
@@ -111,12 +104,10 @@ export class TableRenderer {
     this.buildHud();
     this.relayout();
     window.addEventListener('resize', this.onWindowResize);
-    app.renderer.on('resize', this.onRendererResize);
     onLanguageChange(() => {
       this.drawRoundBar();
       if (this.promptCard !== null && this.rowPrompt.visible) {
         this.rowPrompt.text = t('game.rowPrompt', { c: this.promptCard });
-        this.layoutRowPrompt();
       }
     });
   }
@@ -143,25 +134,16 @@ export class TableRenderer {
     });
     this.rowPrompt.anchor.set(0.5);
     this.rowPrompt.visible = false;
-
-    // translucent backing panel behind the prompt (portrait wraps to two lines)
-    this.promptBg = new Graphics();
-    this.promptBg.visible = false;
-    this.hudLayer.addChild(this.promptBg, this.rowPrompt);
+    this.hudLayer.addChild(this.rowPrompt);
 
     for (let i = 0; i < 5; i++) {
-      const root = new Container();
-      root.label = `badge${i}`;
-      this.badgeRoots.push(root);
-      this.hudLayer.addChild(root);
-
       const box = new Graphics();
       this.badgeBoxes.push(box);
-      root.addChild(box);
+      this.hudLayer.addChild(box);
 
       const fill = new Graphics();
       this.badgeFills.push(fill);
-      root.addChild(fill);
+      this.hudLayer.addChild(fill);
 
       const t = new Text({
         text: '100',
@@ -175,7 +157,7 @@ export class TableRenderer {
       });
       t.anchor.set(0.5);
       this.badgeTexts.push(t);
-      root.addChild(t);
+      this.hudLayer.addChild(t);
       this.hpValues.push(100);
     }
 
@@ -201,21 +183,17 @@ export class TableRenderer {
 
   private layoutBadge(i: number): void {
     const pos = this.layout.badges[i];
-    const root = this.badgeRoots[i];
-    root.x = pos.x;
-    root.y = pos.y;
-    root.scale.set(this.layout.badgeScale);
     const w = 58;
     const h = 26;
     const g = this.badgeBoxes[i];
     g.clear();
-    g.roundRect(-w / 2, -h / 2, w, h, 7);
+    g.roundRect(pos.x - w / 2, pos.y - h / 2, w, h, 7);
     g.fill({ color: 0x0e0c26, alpha: 0.92 });
     g.stroke({ width: 1.5, color: BOT_COLORS[i], alpha: 0.9 });
-    this.badgeTexts[i].x = 0;
-    this.badgeTexts[i].y = 0;
-    this.badgeFills[i].x = 0;
-    this.badgeFills[i].y = 0;
+    this.badgeTexts[i].x = pos.x;
+    this.badgeTexts[i].y = pos.y;
+    this.badgeFills[i].x = pos.x;
+    this.badgeFills[i].y = pos.y;
     this.paintBadge(i);
   }
 
@@ -241,7 +219,7 @@ export class TableRenderer {
   // --------------------------------------------------------------- layout
 
   relayout(): void {
-    this.layout = computeLayout(this.app.screen.width, this.app.screen.height, safeAreaInsets());
+    this.layout = computeLayout(this.app.screen.width, this.app.screen.height);
     this.app.stage.hitArea = this.app.screen;
     const L = this.layout;
 
@@ -256,9 +234,6 @@ export class TableRenderer {
       if (av) {
         av.x = seat.x;
         av.y = seat.y;
-        av.scale.set(L.seatScale);
-        const label = this.avatarLabels[i];
-        if (label) label.style.fontSize = L.portrait ? 14 : 12;
       }
       const st = this.stacks[i];
       if (st && i !== 0) {
@@ -284,7 +259,8 @@ export class TableRenderer {
       );
       g.fill({ color: 0xffffff, alpha: 0.001 });
     }
-    this.layoutRowPrompt();
+    this.rowPrompt.x = L.screenW / 2;
+    this.rowPrompt.y = Math.max(30, L.rowOriginY - 26);
 
     this.staged.forEach((s, i) => {
       if (s) {
@@ -333,32 +309,18 @@ export class TableRenderer {
     }
   }
 
-  /**
-   * Row-choice prompt: landscape keeps the old single-line headline above
-   * the board; portrait wraps to two lines in the grid→rows gap with a
-   * translucent backing panel so it stays legible over the table.
-   */
-  private layoutRowPrompt(): void {
+  /** Hand spacing: cards sit side by side with a gap, never overlapping. */
+  private handStep(n: number): number {
     const L = this.layout;
-    this.rowPrompt.x = L.screenW / 2;
-    this.rowPrompt.y = L.rowPromptY;
-    if (L.portrait) {
-      this.rowPrompt.style.fontSize = 13;
-      this.rowPrompt.style.wordWrap = true;
-      this.rowPrompt.style.wordWrapWidth = L.screenW - 40;
-    } else {
-      this.rowPrompt.style.fontSize = 20;
-      this.rowPrompt.style.wordWrap = false;
-    }
-    const showBg = this.rowPrompt.visible && L.portrait;
-    this.promptBg.visible = showBg;
-    this.promptBg.clear();
-    if (showBg) {
-      const b = this.rowPrompt.getBounds();
-      this.promptBg.roundRect(b.x - 10, b.y - 6, b.width + 20, b.height + 12, 8);
-      this.promptBg.fill({ color: 0x0b0a1e, alpha: 0.88 });
-      this.promptBg.stroke({ width: 1, color: COLORS.yellow, alpha: 0.6 });
-    }
+    const gap = L.handCard.w * 0.1;
+    const ideal = L.handCard.w + gap;
+    const total = L.handCard.w + (n - 1) * ideal;
+    if (total <= L.screenW * 0.94) return ideal;
+    // extreme window: shrink the gap first, overlap only as a last resort
+    return Math.max(
+      L.handCard.w * 0.6,
+      (L.screenW * 0.94 - L.handCard.w) / Math.max(1, n - 1),
+    );
   }
 
   private rowRect(row: number): { x: number; y: number; w: number; h: number } {
@@ -375,12 +337,14 @@ export class TableRenderer {
     const L = this.layout;
     const n = this.handOrder.length;
     if (n === 0) return;
+    const step = this.handStep(n);
+    const totalW = L.handCard.w + (n - 1) * step;
+    const startX = (L.screenW - totalW) / 2 + L.handCard.w / 2;
     this.handOrder.forEach((value, i) => {
       const view = this.handCards.get(value);
       if (!view) return;
-      const slot = L.handSlot(i, n);
-      const x = slot.x;
-      const y = slot.y + (this.selected === value ? -L.handLift : 0);
+      const x = startX + i * step;
+      const y = L.handY + L.handCard.h / 2 + (this.selected === value ? -18 : 0);
       const s = this.selected === value ? 1.06 : 1;
       if (animate) {
         gsap.to(view.container, {
@@ -467,7 +431,6 @@ export class TableRenderer {
     this.handOrder = [];
     this.stacks = [null, null, null, null, null];
     this.avatars = [];
-    this.avatarLabels.length = 0;
     this.staged = [null, null, null, null, null];
 
     const L = this.layout;
@@ -504,7 +467,6 @@ export class TableRenderer {
       const av = this.buildAvatar(i, state.players[i].name);
       av.x = seat.x;
       av.y = seat.y;
-      av.scale.set(L.seatScale);
       av.alpha = 0;
       this.avatars.push(av);
       this.hudLayer.addChild(av);
@@ -535,18 +497,20 @@ export class TableRenderer {
     // hand: fan up from below, x preset to final slot (only y+alpha animate)
     this.handOrder = [...state.players[0].hand];
     const n = this.handOrder.length;
+    const step = this.handStep(n);
+    const totalW = L.handCard.w + (n - 1) * step;
+    const startX = (L.screenW - totalW) / 2 + L.handCard.w / 2;
     this.handOrder.forEach((value, i) => {
       const view = createCard(value, L.handCard);
       this.handCards.set(value, view);
       this.cardLayer.addChild(view.container);
-      const slot = L.handSlot(i, n);
-      view.container.x = slot.x;
+      view.container.x = startX + i * step;
       view.container.y = L.screenH + 70;
       view.container.alpha = 0;
       this.attachHandCard(view, value);
       tweens.push(
         gsap.to(view.container, {
-          y: slot.y,
+          y: L.handY + L.handCard.h / 2,
           alpha: 1,
           duration: dur(0.5),
           delay: dur(0.15 + i * 0.045),
@@ -613,7 +577,7 @@ export class TableRenderer {
       text: name,
       style: {
         fontFamily: 'Arial, sans-serif',
-        fontSize: this.layout.portrait ? 14 : 12,
+        fontSize: 12,
         fill: index === 0 ? COLORS.cyan : COLORS.inkDim,
         letterSpacing: 1,
       },
@@ -621,7 +585,6 @@ export class TableRenderer {
     label.anchor.set(0.5);
     label.y = r + 13;
     c.addChild(label);
-    this.avatarLabels.push(label);
     return c;
   }
 
@@ -1007,7 +970,6 @@ export class TableRenderer {
     this.promptCard = card;
     this.rowPrompt.text = t('game.rowPrompt', { c: card });
     this.rowPrompt.visible = true;
-    this.layoutRowPrompt();
     gsap.fromTo(this.rowPrompt, { alpha: 0 }, { alpha: 1, duration: dur(0.2) });
     play('uiClick');
     const row = await new Promise<number>((resolve) => {
@@ -1016,7 +978,6 @@ export class TableRenderer {
     this.rowChoiceActive = false;
     this.rowHitAreas.forEach((h) => (h.eventMode = 'none'));
     this.rowPrompt.visible = false;
-    this.layoutRowPrompt();
     this.rowChoiceResolve = null;
     this.promptCard = null;
     this.setRowHighlight(null);
@@ -1084,7 +1045,6 @@ export class TableRenderer {
   destroy(): void {
     this.destroyed = true;
     window.removeEventListener('resize', this.onWindowResize);
-    this.app.renderer.off('resize', this.onRendererResize);
     gsap.globalTimeline.getChildren().forEach((t) => t.kill());
     this.root.destroy({ children: true });
   }
