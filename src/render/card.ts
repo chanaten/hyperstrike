@@ -7,6 +7,9 @@ import { Container, Graphics, Text } from 'pixi.js';
 import { damage } from '../engine/cards';
 import { COLORS, type CardMetrics } from './theme';
 
+/** Card numeral face (bundled Orbitron — SIL OFL) with a bold fallback. */
+export const CARD_FONT = "'Orbitron', 'Arial Black', Arial, sans-serif";
+
 /** Danger tint by damage count (shape+color, never color alone).
  *  Chip variants are darkened for legibility on the white card face. */
 function dangerColor(dmg: number): number {
@@ -107,20 +110,22 @@ function buildFace(value: number, m: CardMetrics): Container {
   }
 
   const label = String(value);
-  // Arial Black digit ≈ 0.62em wide — fit the card width
-  const fontSize = Math.min(
-    Math.floor(m.h * 0.4),
-    Math.floor(maxContentW / (label.length * 0.62)),
-  );
+  // Height-driven size, then shrink to fit the card width. Measured after
+  // creation so it adapts to any numeral face (Orbitron digits are wider
+  // than Arial Black at the same size).
+  const baseSize = Math.floor(m.h * 0.4);
   const num = new Text({
     text: label,
     style: {
-      fontFamily: 'Arial Black, Arial, sans-serif',
-      fontSize,
+      fontFamily: CARD_FONT,
+      fontSize: baseSize,
       fontWeight: '900',
       fill: isSeven ? 0xb01030 : 0x1a1740,
     },
   });
+  if (num.width > maxContentW) {
+    num.style.fontSize = Math.floor(baseSize * (maxContentW / num.width));
+  }
   num.anchor.set(0.5);
   num.x = 0;
   num.y = -m.h * 0.05; // hero number sits above the damage chip
@@ -132,7 +137,7 @@ function buildFace(value: number, m: CardMetrics): Container {
   const dmgText = new Text({
     text: String(bh),
     style: {
-      fontFamily: 'Arial Black, Arial, sans-serif',
+      fontFamily: CARD_FONT,
       fontSize: chipFont,
       fontWeight: '900',
       fill: danger,

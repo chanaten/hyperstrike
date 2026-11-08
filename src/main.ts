@@ -169,6 +169,21 @@ async function boot(): Promise<void> {
   // crawl in slow motion when the window is occluded.
   gsap.ticker.lagSmoothing(0);
 
+  // Pixi bakes text into textures at creation, so the card font must be
+  // ready before the first deal. Never block boot for long (offline/first
+  // visit): fall back to Arial Black if it does not arrive in time.
+  try {
+    await Promise.race([
+      Promise.all([
+        document.fonts.load('700 16px Orbitron'),
+        document.fonts.load('900 40px Orbitron'),
+      ]),
+      new Promise((resolve) => setTimeout(resolve, 1500)),
+    ]);
+  } catch {
+    /* fallback font stack applies */
+  }
+
   const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
   if (!canvas) throw new Error('missing #game-canvas');
 
