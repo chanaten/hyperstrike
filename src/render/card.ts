@@ -60,13 +60,13 @@ export interface CardView {
   /** Crossfade-free flip: call at scaleX≈0. */
   showFace: () => void;
   showBack: () => void;
+  /** Redraw the vector art at new metrics (window resized / rotated),
+   *  preserving whichever side is currently shown. */
+  resize: (m: CardMetrics) => void;
 }
 
-/** A card that can display either its face or its back (for flips). */
-export function createCard(value: number, m: CardMetrics): CardView {
-  const container = new Container();
-
-  // ---------- face ----------
+/** Card face: hero number, danger border, foil sheen, damage chip. */
+function buildFace(value: number, m: CardMetrics): Container {
   const face = new Container();
   const bh = damage(value);
   const danger = dangerColor(bh);
@@ -154,8 +154,11 @@ export function createCard(value: number, m: CardMetrics): CardView {
   chip.x = -m.w / 2 + pad;
   chip.y = m.h / 2 - pad - chipFont * 0.5;
   face.addChild(chip);
+  return face;
+}
 
-  // ---------- back ----------
+/** Neon card back: double frame + impact starburst. */
+function buildBack(m: CardMetrics): Container {
   const back = new Container();
   const bb = new Graphics();
   roundedRect(bb, m.w, m.h, m.radius);
@@ -167,19 +170,41 @@ export function createCard(value: number, m: CardMetrics): CardView {
   const glyph = new Graphics();
   drawStarburst(glyph, 0, 0, Math.min(m.w, m.h) * 0.5, COLORS.cardBackLine);
   back.addChild(glyph);
+  return back;
+}
 
-  back.visible = false;
-  container.addChild(face, back);
+/** A card that can display either its face or its back (for flips). */
+export function createCard(value: number, initial: CardMetrics): CardView {
+  const container = new Container();
+  let metrics = initial;
+  let showing: 'face' | 'back' = 'face';
+
+  const build = (): void => {
+    container.removeChildren().forEach((c) => c.destroy({ children: true }));
+    const face = buildFace(value, metrics);
+    const back = buildBack(metrics);
+    face.visible = showing === 'face';
+    back.visible = showing === 'back';
+    container.addChild(face, back);
+  };
+  build();
 
   return {
     container,
     showFace: () => {
-      face.visible = true;
-      back.visible = false;
+      showing = 'face';
+      container.children[0].visible = true;
+      container.children[1].visible = false;
     },
     showBack: () => {
-      face.visible = false;
-      back.visible = true;
+      showing = 'back';
+      container.children[0].visible = false;
+      container.children[1].visible = true;
+    },
+    resize: (m: CardMetrics) => {
+      if (Math.abs(m.w - metrics.w) < 0.5 && Math.abs(m.h - metrics.h) < 0.5) return;
+      metrics = m;
+      build();
     },
   };
 }

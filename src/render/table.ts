@@ -283,9 +283,24 @@ export class TableRenderer {
 
   relayout(): void {
     if (this.destroyed) return;
+    const prev = this.layout;
     this.layout = computeLayout(this.app.screen.width, this.app.screen.height, safeAreaInsets());
     this.app.stage.hitArea = this.app.screen;
     const L = this.layout;
+
+    // Card art is vector-drawn at its metrics, so a rotation or window
+    // resize must redraw it — moving containers alone would keep the old
+    // card size. Cheap: only runs when the card size actually changed.
+    if (Math.abs(L.rowCard.w - prev.rowCard.w) > 0.5) {
+      for (const row of this.rowCards) for (const c of row) c.resize(L.rowCard);
+      for (const c of this.handCards.values()) c.resize(L.handCard);
+      for (const s of this.staged) s?.view.resize(L.handCard);
+      for (let i = 1; i < 5; i++) {
+        if (this.stacks[i] && this.state) {
+          this.rebuildStack(i, this.state.players[i].hand.length);
+        }
+      }
+    }
 
     this.drawMat();
 
