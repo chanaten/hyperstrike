@@ -175,4 +175,22 @@ describe('landscape layout (regression)', () => {
     expect(L.seats[1].x).toBeLessThan(L.seats[3].x);
     expect(L.seats[1].y).toBeLessThan(L.seats[2].y);
   });
+
+  it('keeps side seats clear of the landscape Dynamic Island / notch', () => {
+    const insets: SafeAreaInsets = { top: 0, right: 59, bottom: 21, left: 59 };
+    const N = computeLayout(844, 390, insets);
+    // left/right seat icons and piles stay inside the safe columns
+    expect(N.seats[1].x).toBeGreaterThanOrEqual(59);
+    expect(N.seats[3].x).toBeLessThanOrEqual(844 - 59);
+    expect(N.piles[1].x - N.rowCard.w * 0.57).toBeGreaterThanOrEqual(59);
+    expect(N.piles[3].x + N.rowCard.w * 0.57).toBeLessThanOrEqual(844 - 59);
+    expect(N.staging[1].x).toBeGreaterThanOrEqual(59);
+    expect(N.staging[3].x).toBeLessThanOrEqual(844 - 59);
+    // round line clears the home indicator and the notch column
+    expect(N.roundLine.x).toBeGreaterThanOrEqual(59);
+    expect(N.roundLine.y + 5).toBeLessThanOrEqual(390 - 21);
+    // no inset regressions: still on the flanks and inside the screen
+    expect(N.seats[1].x).toBeLessThan(N.seats[3].x);
+    expectInside(N, 844, 390);
+  });
 });

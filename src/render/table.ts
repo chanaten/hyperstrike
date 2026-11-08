@@ -652,9 +652,9 @@ export class TableRenderer {
 
   private buildAvatar(index: number, name: string): Container {
     const c = new Container();
-    const r = 24;
+    const r = 12; // half-size seat icon (landscape phones)
     const ring = new Graphics();
-    ring.circle(0, 0, r + 3).stroke({ width: 3, color: BOT_COLORS[index], alpha: 0.95 });
+    ring.circle(0, 0, r + 3).stroke({ width: 2.5, color: BOT_COLORS[index], alpha: 0.95 });
     ring.circle(0, 0, r).fill({ color: 0x0e0c26, alpha: 0.95 });
     c.addChild(ring);
 
@@ -682,13 +682,13 @@ export class TableRenderer {
       text: name,
       style: {
         fontFamily: 'Arial, sans-serif',
-        fontSize: 12,
+        fontSize: 11,
         fill: index === 0 ? COLORS.cyan : COLORS.inkDim,
         letterSpacing: 1,
       },
     });
     label.anchor.set(0.5);
-    label.y = r + 13;
+    label.y = r + 10;
     c.addChild(label);
     return c;
   }

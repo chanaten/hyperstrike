@@ -107,11 +107,15 @@ export function computeLayout(
   insets: SafeAreaInsets = NO_INSETS,
 ): Layout {
   if (isPortraitLayout(w, h)) return computePortraitLayout(w, h, insets);
-  return computeLandscapeLayout(w, h);
+  return computeLandscapeLayout(w, h, insets);
 }
 
-function computeLandscapeLayout(w: number, h: number): Layout {
+function computeLandscapeLayout(w: number, h: number, insets: SafeAreaInsets): Layout {
   const pad = Math.max(12, w * 0.015);
+  // Landscape notched phones: keep side content clear of the Dynamic
+  // Island / notch, and the bottom line above the home indicator.
+  const insetL = insets.left;
+  const insetR = insets.right;
   const topMargin = 46;
   const bottomStrip = 44; // round line + breathing room under the hand
 
@@ -161,24 +165,26 @@ function computeLandscapeLayout(w: number, h: number): Layout {
   //   [card pile] → [avatar + name] → [staging] → [rows]
   // so piles never overlap the icon/name and commits fly behind them.
   const pileHalf = rowCard.w * 0.57; // visual width incl. back-stack offset
-  const avatarHalf = 26;
-  const leftPileX = pad + pileHalf + 4;
+  const avatarHalf = 15; // half-size seat icon (r 12 + stroke)
+  const leftPileX = insetL + pad + pileHalf + 4;
   const leftAvatarX = leftPileX + pileHalf + 14 + avatarHalf;
+  const rightPileX = w - insetR - pad - pileHalf - 4;
+  const rightAvatarX = rightPileX - pileHalf - 14 - avatarHalf;
   const sideY = [rowOriginY + rowsH * 0.28, rowOriginY + rowsH * 0.72];
   // YOU sits in the bottom-right corner: avatar + name above the badge.
-  const cornerX = w - pad - 42;
+  const cornerX = w - insetR - pad - 42;
   const avatarY = h - 90;
   const seats: { x: number; y: number }[] = [{ x: cornerX, y: avatarY }];
   seats.push({ x: leftAvatarX, y: sideY[0] });
   seats.push({ x: leftAvatarX, y: sideY[1] });
-  seats.push({ x: w - leftAvatarX, y: sideY[0] });
-  seats.push({ x: w - leftAvatarX, y: sideY[1] });
+  seats.push({ x: rightAvatarX, y: sideY[0] });
+  seats.push({ x: rightAvatarX, y: sideY[1] });
 
   const piles: { x: number; y: number }[] = [{ x: w / 2, y: avatarY }];
   piles.push({ x: leftPileX, y: sideY[0] });
   piles.push({ x: leftPileX, y: sideY[1] });
-  piles.push({ x: w - leftPileX, y: sideY[0] });
-  piles.push({ x: w - leftPileX, y: sideY[1] });
+  piles.push({ x: rightPileX, y: sideY[0] });
+  piles.push({ x: rightPileX, y: sideY[1] });
 
   // Staging sits midway between the avatar group and the rows so cards
   // never collide with either. Your card rises to the band above the hand.
@@ -186,10 +192,11 @@ function computeLandscapeLayout(w: number, h: number): Layout {
     { x: w / 2, y: rowsBottom + rowGapY + rowCard.h / 2 },
   ];
   const leftStagingX = (leftAvatarX + avatarHalf + rowOriginX) / 2;
+  const rightStagingX = (rightAvatarX - avatarHalf + rowOriginX + rowsW) / 2;
   staging.push({ x: leftStagingX, y: sideY[0] });
   staging.push({ x: leftStagingX, y: sideY[1] });
-  staging.push({ x: w - leftStagingX, y: sideY[0] });
-  staging.push({ x: w - leftStagingX, y: sideY[1] });
+  staging.push({ x: rightStagingX, y: sideY[0] });
+  staging.push({ x: rightStagingX, y: sideY[1] });
   // Staging order must match seat ids: [0]=bottom, [1][2]=left, [3][4]=right.
 
   // Opponent score badges sit directly under their card piles; YOU's badge
@@ -201,8 +208,8 @@ function computeLandscapeLayout(w: number, h: number): Layout {
   );
 
   const roundLine = {
-    x: pad + 14,
-    y: h - 18,
+    x: insetL + pad + 14,
+    y: h - 18 - insets.bottom,
     w: Math.min(200, w * 0.16),
   };
 
@@ -228,7 +235,7 @@ function computeLandscapeLayout(w: number, h: number): Layout {
     piles,
     badges,
     botCells: [],
-    youLabel: { x: cornerX, y: avatarY - 30 },
+    youLabel: { x: cornerX, y: avatarY - 22 },
     roundLine,
     roundAnchor: 0,
     roundTextY: roundLine.y - 14,
